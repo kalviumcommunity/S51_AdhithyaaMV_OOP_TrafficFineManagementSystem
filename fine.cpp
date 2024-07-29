@@ -31,12 +31,12 @@ public:
         : name(n), license_number(license) {}
 
     void addFine(const Fine& fine) {
-        fines.push_back(fine);
+        this->fines.push_back(fine);
     }
 
     double getTotalFines() const {
         double total = 0;
-        for (const auto& fine : fines) {
+        for (const auto& fine : this->fines) {
             total += fine.amount;
         }
         return total;
@@ -53,8 +53,8 @@ public:
         : registration_number(reg_num), owner(own) {}
 
     void addViolation(const Violation& violation, double fine_amount) {
-        violations.push_back(violation);
-        owner.addFine(Fine(fine_amount, violation));
+        this->violations.push_back(violation);
+        this->owner.addFine(Fine(fine_amount, violation));
     }
 };
 
@@ -62,21 +62,19 @@ int main() {
     string personName, licenseNumber, registrationNumber, violationDescription;
     double fineAmount;
 
-    
     getline(cin, personName);
-    
+
     getline(cin, licenseNumber);
+    
     Person person(personName, licenseNumber);
 
-    
     getline(cin, registrationNumber);
+    
     Vehicle vehicle(registrationNumber, person);
 
-    
     getline(cin, violationDescription);
-    
     cin >> fineAmount;
-    cin.ignore();
+    // cin.ignore();
 
     Violation violation(violationDescription);
     vehicle.addViolation(violation, fineAmount);

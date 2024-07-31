@@ -59,27 +59,60 @@ public:
 };
 
 int main() {
+    int numPeople, numVehicles, numViolations;
     string personName, licenseNumber, registrationNumber, violationDescription;
     double fineAmount;
 
-    getline(cin, personName);
+    cout << "Enter number of people: ";
+    cin >> numPeople;
+    cin.ignore(); 
 
-    getline(cin, licenseNumber);
-    
-    Person person(personName, licenseNumber);
+    vector<Person> people;
 
-    getline(cin, registrationNumber);
-    
-    Vehicle vehicle(registrationNumber, person);
+    for (int i = 0; i < numPeople; ++i) {
+        cout << "Enter name of person " << (i + 1) << ": ";
+        getline(cin, personName);
 
-    getline(cin, violationDescription);
-    cin >> fineAmount;
-    // cin.ignore();
+        cout << "Enter license number of person " << (i + 1) << ": ";
+        getline(cin, licenseNumber);
 
-    Violation violation(violationDescription);
-    vehicle.addViolation(violation, fineAmount);
+        people.push_back(Person(personName, licenseNumber));
+    }
 
-    cout << "Total fines for " << person.name << ": " << person.getTotalFines() << endl;
+    for (int i = 0; i < numPeople; ++i) {
+        Person& person = people[i];
+
+        cout << "Enter number of vehicles for " << person.name << ": ";
+        cin >> numVehicles;
+        cin.ignore(); 
+
+        for (int j = 0; j < numVehicles; ++j) {
+            cout << "Enter registration number of vehicle " << (j + 1) << ": ";
+            getline(cin, registrationNumber);
+
+            Vehicle vehicle(registrationNumber, person);
+
+            cout << "Enter number of violations for vehicle " << (j + 1) << ": ";
+            cin >> numViolations;
+            cin.ignore(); 
+
+            for (int k = 0; k < numViolations; ++k) {
+                cout << "Enter description of violation " << (k + 1) << ": ";
+                getline(cin, violationDescription);
+
+                cout << "Enter fine amount for violation " << (k + 1) << ": ";
+                cin >> fineAmount;
+                cin.ignore(); 
+
+                Violation violation(violationDescription);
+                vehicle.addViolation(violation, fineAmount);
+            }
+        }
+    }
+
+    for (const auto& person : people) {
+        cout << "Total fines for " << person.name << ": " << person.getTotalFines() << endl;
+    }
 
     return 0;
 }

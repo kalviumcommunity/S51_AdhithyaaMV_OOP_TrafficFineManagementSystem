@@ -15,9 +15,9 @@ public:
 class Fine {
 public:
     double amount;
-    Violation violation;
+    Violation* violation;  
 
-    Fine(double amt, const Violation& viol)
+    Fine(double amt, Violation* viol)
         : amount(amt), violation(viol) {}
 };
 
@@ -25,19 +25,26 @@ class Person {
 public:
     string name;
     string license_number;
-    vector<Fine> fines;
+    vector<Fine*> fines;  
 
     Person(const string& n, const string& license)
         : name(n), license_number(license) {}
 
-    void addFine(const Fine& fine) {
-        this->fines.push_back(fine);
+    ~Person() {
+        
+        for (Fine* fine : fines) {
+            delete fine;
+        }
+    }
+
+    void addFine(Fine* fine) {
+        fines.push_back(fine);
     }
 
     double getTotalFines() const {
         double total = 0;
-        for (const auto& fine : this->fines) {
-            total += fine.amount;
+        for (const auto& fine : fines) {
+            total += fine->amount;
         }
         return total;
     }
@@ -46,15 +53,22 @@ public:
 class Vehicle {
 public:
     string registration_number;
-    Person& owner;
-    vector<Violation> violations;
+    Person* owner;
+    vector<Violation*> violations;  
 
-    Vehicle(const string& reg_num, Person& own)
+    Vehicle(const string& reg_num, Person* own)
         : registration_number(reg_num), owner(own) {}
 
-    void addViolation(const Violation& violation, double fine_amount) {
-        this->violations.push_back(violation);
-        this->owner.addFine(Fine(fine_amount, violation));
+    ~Vehicle() {
+        
+        for (Violation* violation : violations) {
+            delete violation;
+        }
+    }
+
+    void addViolation(Violation* violation, double fine_amount) {
+        violations.push_back(violation);
+        owner->addFine(new Fine(fine_amount, violation));  
     }
 };
 
@@ -65,9 +79,9 @@ int main() {
 
     cout << "Enter number of people: ";
     cin >> numPeople;
-    cin.ignore(); 
+    cin.ignore();  
 
-    vector<Person> people;
+    vector<Person*> people;  
 
     for (int i = 0; i < numPeople; ++i) {
         cout << "Enter name of person " << (i + 1) << ": ";
@@ -76,25 +90,25 @@ int main() {
         cout << "Enter license number of person " << (i + 1) << ": ";
         getline(cin, licenseNumber);
 
-        people.push_back(Person(personName, licenseNumber));
+        people.push_back(new Person(personName, licenseNumber));  
     }
 
     for (int i = 0; i < numPeople; ++i) {
-        Person& person = people[i];
+        Person* person = people[i];
 
-        cout << "Enter number of vehicles for " << person.name << ": ";
+        cout << "Enter number of vehicles for " << person->name << ": ";
         cin >> numVehicles;
-        cin.ignore(); 
+        cin.ignore();  
 
         for (int j = 0; j < numVehicles; ++j) {
             cout << "Enter registration number of vehicle " << (j + 1) << ": ";
             getline(cin, registrationNumber);
 
-            Vehicle vehicle(registrationNumber, person);
+            Vehicle* vehicle = new Vehicle(registrationNumber, person);  
 
             cout << "Enter number of violations for vehicle " << (j + 1) << ": ";
             cin >> numViolations;
-            cin.ignore(); 
+            cin.ignore();  
 
             for (int k = 0; k < numViolations; ++k) {
                 cout << "Enter description of violation " << (k + 1) << ": ";
@@ -102,16 +116,20 @@ int main() {
 
                 cout << "Enter fine amount for violation " << (k + 1) << ": ";
                 cin >> fineAmount;
-                cin.ignore(); 
+                cin.ignore();  
 
-                Violation violation(violationDescription);
-                vehicle.addViolation(violation, fineAmount);
+                Violation* violation = new Violation(violationDescription);  
+                vehicle->addViolation(violation, fineAmount);
             }
+
+            delete vehicle;  
         }
     }
 
-    for (const auto& person : people) {
-        cout << "Total fines for " << person.name << ": " << person.getTotalFines() << endl;
+    
+    for (Person* person : people) {
+        cout << "Total fines for " << person->name << ": " << person->getTotalFines() << endl;
+        delete person;  
     }
 
     return 0;

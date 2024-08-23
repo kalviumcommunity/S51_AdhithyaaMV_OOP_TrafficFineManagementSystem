@@ -7,19 +7,27 @@ using namespace std;
 class Violation {
 public:
     string description;
-
+    static int totalViolations;  
     Violation(const string& desc)
-        : description(desc) {}
+        : description(desc) {
+        totalViolations++; 
+    }
 };
+
+int Violation::totalViolations = 0;
 
 class Fine {
 public:
     double amount;
     Violation* violation;  
-
+    static double totalFinesAmount; 
     Fine(double amt, Violation* viol)
-        : amount(amt), violation(viol) {}
+        : amount(amt), violation(viol) {
+        totalFinesAmount += amt;  
+    }
 };
+
+double Fine::totalFinesAmount = 0;
 
 class Person {
 public:
@@ -31,7 +39,6 @@ public:
         : name(n), license_number(license) {}
 
     ~Person() {
-        
         for (Fine* fine : fines) {
             delete fine;
         }
@@ -60,7 +67,6 @@ public:
         : registration_number(reg_num), owner(own) {}
 
     ~Vehicle() {
-        
         for (Violation* violation : violations) {
             delete violation;
         }
@@ -126,7 +132,9 @@ int main() {
         }
     }
 
-    
+    cout << "Total number of violations recorded: " << Violation::totalViolations << endl;
+    cout << "Total amount of fines issued: " << Fine::totalFinesAmount << endl;
+
     for (Person* person : people) {
         cout << "Total fines for " << person->name << ": " << person->getTotalFines() << endl;
         delete person;  

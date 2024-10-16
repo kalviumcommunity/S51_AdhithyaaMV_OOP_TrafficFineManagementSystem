@@ -5,13 +5,21 @@
 using namespace std;
 
 class Violation {
-public:
-    string description;
-    static int totalViolations;
+private:
+    string description; 
+    static int totalViolations; 
 
-    Violation(const string& desc)
-        : description(desc) {
+public:
+    Violation(const string& desc) : description(desc) {
         totalViolations++;
+    }
+
+    string getDescription() const {
+        return description;
+    }
+
+    void setDescription(const string& desc) {
+        description = desc;
     }
 
     static int getTotalViolations() {
@@ -22,14 +30,24 @@ public:
 int Violation::totalViolations = 0;
 
 class Fine {
-public:
-    double amount;
+private:
+    double amount; 
     Violation* violation;
-    static double totalFinesAmount;
+    static double totalFinesAmount; 
 
-    Fine(double amt, Violation* viol)
-        : amount(amt), violation(viol) {
+public:
+    Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
         totalFinesAmount += amt;
+    }
+
+    double getAmount() const {
+        return amount;
+    }
+
+    void setAmount(double amt) {
+        totalFinesAmount -= amount; 
+        amount = amt;               
+        totalFinesAmount += amt;   
     }
 
     static double getTotalFinesAmount() {
@@ -40,11 +58,12 @@ public:
 double Fine::totalFinesAmount = 0;
 
 class Person {
-public:
-    string name;
-    string license_number;
-    vector<Fine*> fines;
+private:
+    string name; 
+    string license_number; 
+    vector<Fine*> fines; 
 
+public:
     Person(const string& n, const string& license)
         : name(n), license_number(license) {}
 
@@ -54,6 +73,22 @@ public:
         }
     }
 
+    string getName() const {
+        return name;
+    }
+
+    void setName(const string& n) {
+        name = n;
+    }
+
+    string getLicenseNumber() const {
+        return license_number;
+    }
+
+    void setLicenseNumber(const string& license) {
+        license_number = license;
+    }
+
     void addFine(Fine* fine) {
         fines.push_back(fine);
     }
@@ -61,18 +96,19 @@ public:
     double getTotalFines() const {
         double total = 0;
         for (const auto& fine : fines) {
-            total += fine->amount;
+            total += fine->getAmount(); 
         }
         return total;
     }
 };
 
 class Vehicle {
-public:
-    string registration_number;
-    Person* owner;
+private:
+    string registration_number; 
+    Person* owner; 
     vector<Violation*> violations;
 
+public:
     Vehicle(const string& reg_num, Person* own)
         : registration_number(reg_num), owner(own) {}
 
@@ -82,9 +118,17 @@ public:
         }
     }
 
+    string getRegistrationNumber() const {
+        return registration_number;
+    }
+
+    void setRegistrationNumber(const string& reg_num) {
+        registration_number = reg_num;
+    }
+
     void addViolation(Violation* violation, double fine_amount) {
-        violations.push_back(violation);
-        owner->addFine(new Fine(fine_amount, violation));
+        violations.push_back(violation); 
+        owner->addFine(new Fine(fine_amount, violation)); 
     }
 };
 
@@ -97,7 +141,7 @@ int main() {
     cin >> numPeople;
     cin.ignore();
 
-    vector<Person*> people;
+    vector<Person*> people; 
 
     for (int i = 0; i < numPeople; ++i) {
         cout << "Enter name of person " << (i + 1) << ": ";
@@ -106,13 +150,13 @@ int main() {
         cout << "Enter license number of person " << (i + 1) << ": ";
         getline(cin, licenseNumber);
 
-        people.push_back(new Person(personName, licenseNumber));
+        people.push_back(new Person(personName, licenseNumber)); 
     }
 
     for (int i = 0; i < numPeople; ++i) {
         Person* person = people[i];
 
-        cout << "Enter number of vehicles for " << person->name << ": ";
+        cout << "Enter number of vehicles for " << person->getName() << ": ";
         cin >> numVehicles;
         cin.ignore();
 
@@ -138,7 +182,7 @@ int main() {
                 vehicle->addViolation(violation, fineAmount);
             }
 
-            delete vehicle;
+            delete vehicle; 
         }
     }
 
@@ -146,8 +190,8 @@ int main() {
     cout << "Total amount of fines issued: " << Fine::getTotalFinesAmount() << endl;
 
     for (Person* person : people) {
-        cout << "Total fines for " << person->name << ": " << person->getTotalFines() << endl;
-        delete person;
+        cout << "Total fines for " << person->getName() << ": " << person->getTotalFines() << endl;
+        delete person; 
     }
 
     return 0;

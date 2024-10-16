@@ -14,15 +14,15 @@ public:
         totalViolations++;
     }
 
-    string getDescription() const {
+    string getDescription() const {  
         return description;
     }
 
-    void setDescription(const string& desc) {
+    void setDescription(const string& desc) {  
         description = desc;
     }
 
-    static int getTotalViolations() {
+    static int getTotalViolations() { 
         return totalViolations;
     }
 };
@@ -40,17 +40,17 @@ public:
         totalFinesAmount += amt;
     }
 
-    double getAmount() const {
+    double getAmount() const { 
         return amount;
     }
 
-    void setAmount(double amt) {
-        totalFinesAmount -= amount; 
+    void setAmount(double amt) {  
+        totalFinesAmount -= amount;  
         amount = amt;               
-        totalFinesAmount += amt;   
+        totalFinesAmount += amt;    
     }
 
-    static double getTotalFinesAmount() {
+    static double getTotalFinesAmount() {  
         return totalFinesAmount;
     }
 };
@@ -73,19 +73,19 @@ public:
         }
     }
 
-    string getName() const {
+    string getName() const {  
         return name;
     }
 
-    void setName(const string& n) {
+    void setName(const string& n) {  
         name = n;
     }
 
-    string getLicenseNumber() const {
+    string getLicenseNumber() const { 
         return license_number;
     }
 
-    void setLicenseNumber(const string& license) {
+    void setLicenseNumber(const string& license) {  
         license_number = license;
     }
 
@@ -93,7 +93,7 @@ public:
         fines.push_back(fine);
     }
 
-    double getTotalFines() const {
+    double getTotalFines() const { 
         double total = 0;
         for (const auto& fine : fines) {
             total += fine->getAmount(); 
@@ -118,11 +118,11 @@ public:
         }
     }
 
-    string getRegistrationNumber() const {
+    string getRegistrationNumber() const {  
         return registration_number;
     }
 
-    void setRegistrationNumber(const string& reg_num) {
+    void setRegistrationNumber(const string& reg_num) { 
         registration_number = reg_num;
     }
 
@@ -150,7 +150,11 @@ int main() {
         cout << "Enter license number of person " << (i + 1) << ": ";
         getline(cin, licenseNumber);
 
-        people.push_back(new Person(personName, licenseNumber)); 
+        Person* person = new Person(personName, licenseNumber);
+        person->setName(personName);  
+        person->setLicenseNumber(licenseNumber);
+
+        people.push_back(person); 
     }
 
     for (int i = 0; i < numPeople; ++i) {
@@ -179,6 +183,7 @@ int main() {
                 cin.ignore();
 
                 Violation* violation = new Violation(violationDescription);
+                violation->setDescription(violationDescription);  
                 vehicle->addViolation(violation, fineAmount);
             }
 

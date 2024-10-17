@@ -32,7 +32,7 @@ int Violation::totalViolations = 0;
 class Fine {
 private:
     double amount; 
-    Violation* violation;
+    Violation* violation; 
     static double totalFinesAmount; 
 
 public:
@@ -45,7 +45,7 @@ public:
     }
 
     void setAmount(double amt) {  
-        totalFinesAmount -= amount;  
+        totalFinesAmount -= amount; 
         amount = amt;               
         totalFinesAmount += amt;    
     }

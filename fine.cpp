@@ -6,23 +6,23 @@ using namespace std;
 
 class Violation {
 private:
-    string description; 
-    static int totalViolations; 
+    string description;
+    static int totalViolations;
 
 public:
     Violation(const string& desc) : description(desc) {
         totalViolations++;
     }
 
-    string getDescription() const {  
+    string getDescription() const {
         return description;
     }
 
-    void setDescription(const string& desc) {  
+    void setDescription(const string& desc) {
         description = desc;
     }
 
-    static int getTotalViolations() { 
+    static int getTotalViolations() {
         return totalViolations;
     }
 };
@@ -30,62 +30,77 @@ public:
 int Violation::totalViolations = 0;
 
 class Fine {
-private:
-    double amount; 
-    Violation* violation; 
-    static double totalFinesAmount; 
+protected:
+    double amount;
+    Violation* violation;
+    static double totalFinesAmount;
 
 public:
     Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
         totalFinesAmount += amt;
     }
 
-    double getAmount() const { 
+    virtual ~Fine() = default;
+
+    double getAmount() const {
         return amount;
     }
 
-    void setAmount(double amt) {  
-        totalFinesAmount -= amount; 
-        amount = amt;               
-        totalFinesAmount += amt;    
+    void setAmount(double amt) {
+        totalFinesAmount -= amount;
+        amount = amt;
+        totalFinesAmount += amt;
     }
 
-    static double getTotalFinesAmount() {  
+    static double getTotalFinesAmount() {
         return totalFinesAmount;
     }
 };
 
 double Fine::totalFinesAmount = 0;
 
-class Person {
-private:
-    string name; 
-    string license_number; 
-    vector<Fine*> fines; 
+class HeavyFine : public Fine {
+public:
+    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {}
+};
+
+class Entity {
+protected:
+    string name;
 
 public:
-    Person(const string& n, const string& license)
-        : name(n), license_number(license) {}
+    Entity(const string& name) : name(name) {}
+    virtual ~Entity() = default;
 
-    ~Person() {
-        for (Fine* fine : fines) {
-            delete fine;
-        }
-    }
-
-    string getName() const {  
+    string getName() const {
         return name;
     }
 
-    void setName(const string& n) {  
+    void setName(const string& n) {
         name = n;
     }
+};
 
-    string getLicenseNumber() const { 
+class Person : public Entity {
+private:
+    string license_number;
+    vector<Fine*> fines; 
+
+public:
+    Person(const string& name, const string& license)
+        : Entity(name), license_number(license) {}
+
+    ~Person() {
+        for (Fine* fine : fines) {
+            delete fine;  
+        }
+    }
+
+    string getLicenseNumber() const {
         return license_number;
     }
 
-    void setLicenseNumber(const string& license) {  
+    void setLicenseNumber(const string& license) {
         license_number = license;
     }
 
@@ -93,10 +108,10 @@ public:
         fines.push_back(fine);
     }
 
-    double getTotalFines() const { 
+    double getTotalFines() const {
         double total = 0;
         for (const auto& fine : fines) {
-            total += fine->getAmount(); 
+            total += fine->getAmount();  
         }
         return total;
     }
@@ -104,8 +119,8 @@ public:
 
 class Vehicle {
 private:
-    string registration_number; 
-    Person* owner; 
+    string registration_number;
+    Person* owner;
     vector<Violation*> violations;
 
 public:
@@ -118,17 +133,21 @@ public:
         }
     }
 
-    string getRegistrationNumber() const {  
+    string getRegistrationNumber() const {
         return registration_number;
     }
 
-    void setRegistrationNumber(const string& reg_num) { 
+    void setRegistrationNumber(const string& reg_num) {
         registration_number = reg_num;
     }
 
-    void addViolation(Violation* violation, double fine_amount) {
-        violations.push_back(violation); 
-        owner->addFine(new Fine(fine_amount, violation)); 
+    void addViolation(Violation* violation, double fine_amount, bool heavy = false) {
+        violations.push_back(violation);
+        if (heavy) {
+            owner->addFine(new HeavyFine(fine_amount, violation));
+        } else {
+            owner->addFine(new Fine(fine_amount, violation));
+        }
     }
 };
 
@@ -136,12 +155,13 @@ int main() {
     int numPeople, numVehicles, numViolations;
     string personName, licenseNumber, registrationNumber, violationDescription;
     double fineAmount;
+    bool isHeavy;
 
     cout << "Enter number of people: ";
     cin >> numPeople;
     cin.ignore();
 
-    vector<Person*> people; 
+    vector<Person*> people;
 
     for (int i = 0; i < numPeople; ++i) {
         cout << "Enter name of person " << (i + 1) << ": ";
@@ -151,10 +171,7 @@ int main() {
         getline(cin, licenseNumber);
 
         Person* person = new Person(personName, licenseNumber);
-        person->setName(personName);  
-        person->setLicenseNumber(licenseNumber);
-
-        people.push_back(person); 
+        people.push_back(person);
     }
 
     for (int i = 0; i < numPeople; ++i) {
@@ -164,11 +181,14 @@ int main() {
         cin >> numVehicles;
         cin.ignore();
 
+        vector<Vehicle*> vehicles;  
+
         for (int j = 0; j < numVehicles; ++j) {
             cout << "Enter registration number of vehicle " << (j + 1) << ": ";
             getline(cin, registrationNumber);
 
             Vehicle* vehicle = new Vehicle(registrationNumber, person);
+            vehicles.push_back(vehicle);  
 
             cout << "Enter number of violations for vehicle " << (j + 1) << ": ";
             cin >> numViolations;
@@ -182,12 +202,17 @@ int main() {
                 cin >> fineAmount;
                 cin.ignore();
 
-                Violation* violation = new Violation(violationDescription);
-                violation->setDescription(violationDescription);  
-                vehicle->addViolation(violation, fineAmount);
-            }
+                cout << "Is it a heavy violation (1 for yes, 0 for no)? ";
+                cin >> isHeavy;
+                cin.ignore();
 
-            delete vehicle; 
+                Violation* violation = new Violation(violationDescription);
+                vehicle->addViolation(violation, fineAmount, isHeavy);
+            }
+        }
+
+        for (Vehicle* vehicle : vehicles) {
+            delete vehicle;
         }
     }
 
@@ -196,7 +221,7 @@ int main() {
 
     for (Person* person : people) {
         cout << "Total fines for " << person->getName() << ": " << person->getTotalFines() << endl;
-        delete person; 
+        delete person;
     }
 
     return 0;

@@ -6,8 +6,8 @@ using namespace std;
 
 class Violation {
 private:
-    string description;
-    static int totalViolations;
+    string description;          
+    static int totalViolations;  
 
 public:
     Violation(const string& desc) : description(desc) {
@@ -31,9 +31,9 @@ int Violation::totalViolations = 0;
 
 class Fine {
 protected:
-    double amount;
-    Violation* violation;
-    static double totalFinesAmount;
+    double amount;               
+    Violation* violation;        
+    static double totalFinesAmount; 
 
 public:
     Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
@@ -84,7 +84,7 @@ public:
 class Person : public Entity {
 private:
     string license_number;
-    vector<Fine*> fines; 
+    vector<Fine*> fines;  
 
 public:
     Person(const string& name, const string& license)

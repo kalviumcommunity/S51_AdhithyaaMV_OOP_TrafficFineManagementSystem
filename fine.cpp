@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>  
 
 using namespace std;
 
@@ -28,15 +29,11 @@ int Violation::totalViolations = 0;
 class Fine {
 protected:
     double amount;
-    Violation* violation;
+    shared_ptr<Violation> violation;
     static double totalFinesAmount;
 
 public:
-    Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
-        totalFinesAmount += amt;
-    }
-
-    Fine(double amt) : amount(amt), violation(nullptr) {
+    Fine(double amt, shared_ptr<Violation> viol) : amount(amt), violation(viol) {
         totalFinesAmount += amt;
     }
 
@@ -61,12 +58,33 @@ public:
 
 double Fine::totalFinesAmount = 0;
 
+
+class StandardFine : public Fine {
+public:
+    StandardFine(double amt, shared_ptr<Violation> viol) : Fine(amt, viol) {}
+
+    void applyFinePolicy() const override {
+        cout << "Applying standard fine policy: " << amount << endl;
+    }
+};
+
 class HeavyFine : public Fine {
 public:
-    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {}
+    HeavyFine(double amt, shared_ptr<Violation> viol) : Fine(amt * 2, viol) {}
 
     void applyFinePolicy() const override {
         cout << "Applying heavy fine policy with double the amount: " << amount << endl;
+    }
+};
+
+class FineFactory {
+public:
+    static unique_ptr<Fine> createFine(double amount, shared_ptr<Violation> viol, bool heavy = false) {
+        if (heavy) {
+            return make_unique<HeavyFine>(amount, viol);
+        } else {
+            return make_unique<StandardFine>(amount, viol);
+        }
     }
 };
 
@@ -86,24 +104,18 @@ public:
 class Person : public Entity {
 private:
     string license_number;
-    vector<Fine*> fines;
+    vector<unique_ptr<Fine>> fines;
 
 public:
     Person(const string& name, const string& license)
         : Entity(name), license_number(license) {}
 
-    ~Person() {
-        for (Fine* fine : fines) {
-            delete fine;
-        }
-    }
-
     string getLicenseNumber() const {
         return license_number;
     }
 
-    void addFine(Fine* fine) {
-        fines.push_back(fine);
+    void addFine(unique_ptr<Fine> fine) {
+        fines.push_back(move(fine));
     }
 
     double getTotalFines() const {
@@ -125,39 +137,28 @@ class Vehicle {
 private:
     string registration_number;
     Person* owner;
-    vector<Violation*> violations;
+    vector<shared_ptr<Violation>> violations;
 
 public:
     Vehicle(const string& reg_num, Person* own)
         : registration_number(reg_num), owner(own) {}
 
-    ~Vehicle() {
-        for (Violation* violation : violations) {
-            delete violation;
-        }
-    }
-
-    void addViolation(Violation* violation, double fine_amount, bool heavy = false) {
+    void addViolation(const string& violationDescription, double fineAmount, bool heavy = false) {
+        auto violation = make_shared<Violation>(violationDescription);
         violations.push_back(violation);
-        if (heavy) {
-            owner->addFine(new HeavyFine(fine_amount, violation));
-        } else {
-            owner->addFine(new Fine(fine_amount, violation));
-        }
+        owner->addFine(FineFactory::createFine(fineAmount, violation, heavy));
     }
 };
 
 int main() {
-    int numPeople, numVehicles, numViolations;
-    string personName, licenseNumber, registrationNumber, violationDescription;
-    double fineAmount;
-    bool isHeavy;
+    int numPeople;
+    string personName, licenseNumber;
 
     cout << "Enter number of people: ";
     cin >> numPeople;
     cin.ignore();
 
-    vector<Person*> people;
+    vector<unique_ptr<Person>> people;
 
     for (int i = 0; i < numPeople; ++i) {
         cout << "Enter name of person " << (i + 1) << ": ";
@@ -166,31 +167,33 @@ int main() {
         cout << "Enter license number of person " << (i + 1) << ": ";
         getline(cin, licenseNumber);
 
-        Person* person = new Person(personName, licenseNumber);
-        people.push_back(person);
+        auto person = make_unique<Person>(personName, licenseNumber);
+        people.push_back(move(person));
     }
 
-    for (int i = 0; i < numPeople; ++i) {
-        Person* person = people[i];
-
+    for (auto& person : people) {
+        int numVehicles;
         cout << "Enter number of vehicles for " << person->getName() << ": ";
         cin >> numVehicles;
         cin.ignore();
 
-        vector<Vehicle*> vehicles;
-
         for (int j = 0; j < numVehicles; ++j) {
+            string registrationNumber;
             cout << "Enter registration number of vehicle " << (j + 1) << ": ";
             getline(cin, registrationNumber);
 
-            Vehicle* vehicle = new Vehicle(registrationNumber, person);
-            vehicles.push_back(vehicle);
+            Vehicle vehicle(registrationNumber, person.get());
 
+            int numViolations;
             cout << "Enter number of violations for vehicle " << (j + 1) << ": ";
             cin >> numViolations;
             cin.ignore();
 
             for (int k = 0; k < numViolations; ++k) {
+                string violationDescription;
+                double fineAmount;
+                bool isHeavy;
+
                 cout << "Enter description of violation " << (k + 1) << ": ";
                 getline(cin, violationDescription);
 
@@ -202,23 +205,17 @@ int main() {
                 cin >> isHeavy;
                 cin.ignore();
 
-                Violation* violation = new Violation(violationDescription);
-                vehicle->addViolation(violation, fineAmount, isHeavy);
+                vehicle.addViolation(violationDescription, fineAmount, isHeavy);
             }
-        }
-
-        for (Vehicle* vehicle : vehicles) {
-            delete vehicle;
         }
     }
 
     cout << "Total number of violations recorded: " << Violation::getTotalViolations() << endl;
     cout << "Total amount of fines issued: " << Fine::getTotalFinesAmount() << endl;
 
-    for (Person* person : people) {
+    for (const auto& person : people) {
         cout << "Total fines for " << person->getName() << ": " << person->getTotalFines() << endl;
         person->applyFinePolicies();
-        delete person;
     }
 
     return 0;

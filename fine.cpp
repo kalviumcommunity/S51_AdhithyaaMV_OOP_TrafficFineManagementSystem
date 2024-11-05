@@ -1,7 +1,8 @@
+
 #include <iostream>
 #include <vector>
 #include <string>
-#include <memory>  
+#include <memory>
 
 using namespace std;
 
@@ -53,11 +54,10 @@ public:
         return totalFinesAmount;
     }
 
-    virtual void applyFinePolicy() const = 0; 
+    virtual void applyFinePolicy() const = 0;
 };
 
 double Fine::totalFinesAmount = 0;
-
 
 class StandardFine : public Fine {
 public:
@@ -88,6 +88,30 @@ public:
     }
 };
 
+class FineManager {
+private:
+    vector<unique_ptr<Fine>> fines;
+
+public:
+    void addFine(unique_ptr<Fine> fine) {
+        fines.push_back(move(fine));
+    }
+
+    double getTotalFinesAmount() const {
+        double total = 0;
+        for (const auto& fine : fines) {
+            total += fine->getAmount();
+        }
+        return total;
+    }
+
+    void applyFinePolicies() const {
+        for (const auto& fine : fines) {
+            fine->applyFinePolicy();
+        }
+    }
+};
+
 class Entity {
 protected:
     string name;
@@ -104,7 +128,7 @@ public:
 class Person : public Entity {
 private:
     string license_number;
-    vector<unique_ptr<Fine>> fines;
+    FineManager fineManager;
 
 public:
     Person(const string& name, const string& license)
@@ -114,22 +138,20 @@ public:
         return license_number;
     }
 
-    void addFine(unique_ptr<Fine> fine) {
-        fines.push_back(move(fine));
+    FineManager& getFineManager() {
+        return fineManager;
     }
+};
 
-    double getTotalFines() const {
-        double total = 0;
-        for (const auto& fine : fines) {
-            total += fine->getAmount();
-        }
-        return total;
-    }
+class ViolationManager {
+private:
+    vector<shared_ptr<Violation>> violations;
 
-    void applyFinePolicies() const {
-        for (const auto& fine : fines) {
-            fine->applyFinePolicy();
-        }
+public:
+    shared_ptr<Violation> addViolation(const string& description) {
+        auto violation = make_shared<Violation>(description);
+        violations.push_back(violation);
+        return violation;
     }
 };
 
@@ -137,16 +159,16 @@ class Vehicle {
 private:
     string registration_number;
     Person* owner;
-    vector<shared_ptr<Violation>> violations;
+    ViolationManager violationManager;
 
 public:
     Vehicle(const string& reg_num, Person* own)
         : registration_number(reg_num), owner(own) {}
 
-    void addViolation(const string& violationDescription, double fineAmount, bool heavy = false) {
-        auto violation = make_shared<Violation>(violationDescription);
-        violations.push_back(violation);
-        owner->addFine(FineFactory::createFine(fineAmount, violation, heavy));
+    void addViolationWithFine(const string& violationDescription, double fineAmount, bool heavy = false) {
+        auto violation = violationManager.addViolation(violationDescription);
+        auto fine = FineFactory::createFine(fineAmount, violation, heavy);
+        owner->getFineManager().addFine(move(fine));
     }
 };
 
@@ -205,7 +227,7 @@ int main() {
                 cin >> isHeavy;
                 cin.ignore();
 
-                vehicle.addViolation(violationDescription, fineAmount, isHeavy);
+                vehicle.addViolationWithFine(violationDescription, fineAmount, isHeavy);
             }
         }
     }
@@ -214,8 +236,8 @@ int main() {
     cout << "Total amount of fines issued: " << Fine::getTotalFinesAmount() << endl;
 
     for (const auto& person : people) {
-        cout << "Total fines for " << person->getName() << ": " << person->getTotalFines() << endl;
-        person->applyFinePolicies();
+        cout << "Total fines for " << person->getName() << ": " << person->getFineManager().getTotalFinesAmount() << endl;
+        person->getFineManager().applyFinePolicies();
     }
 
     return 0;

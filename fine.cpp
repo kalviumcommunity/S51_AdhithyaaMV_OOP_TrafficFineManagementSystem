@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <vector>
 #include <string>
@@ -6,6 +5,38 @@
 
 using namespace std;
 
+// Interface for creating fine policies
+class FinePolicy {
+public:
+    virtual ~FinePolicy() = default;
+    virtual void applyPolicy(double& amount) const = 0;
+    virtual string getPolicyDescription() const = 0;
+};
+
+// Concrete policies for fine application
+class StandardFinePolicy : public FinePolicy {
+public:
+    void applyPolicy(double& amount) const override {
+        // No modification needed for standard fine
+    }
+
+    string getPolicyDescription() const override {
+        return "Applying standard fine policy.";
+    }
+};
+
+class HeavyFinePolicy : public FinePolicy {
+public:
+    void applyPolicy(double& amount) const override {
+        amount *= 2; // Double the fine for heavy violations
+    }
+
+    string getPolicyDescription() const override {
+        return "Applying heavy fine policy with double the amount.";
+    }
+};
+
+// Violation class to represent an offense and keep track of the total
 class Violation {
 private:
     string description;
@@ -27,15 +58,19 @@ public:
 
 int Violation::totalViolations = 0;
 
+// Abstract Fine class, depending on FinePolicy abstraction
 class Fine {
 protected:
     double amount;
     shared_ptr<Violation> violation;
+    shared_ptr<FinePolicy> finePolicy;
     static double totalFinesAmount;
 
 public:
-    Fine(double amt, shared_ptr<Violation> viol) : amount(amt), violation(viol) {
-        totalFinesAmount += amt;
+    Fine(double amt, shared_ptr<Violation> viol, shared_ptr<FinePolicy> policy)
+        : amount(amt), violation(viol), finePolicy(policy) {
+        finePolicy->applyPolicy(amount); // Apply the fine policy on amount
+        totalFinesAmount += amount;
     }
 
     virtual ~Fine() = default;
@@ -47,47 +82,43 @@ public:
     void setAmount(double amt) {
         totalFinesAmount -= amount;
         amount = amt;
-        totalFinesAmount += amt;
+        finePolicy->applyPolicy(amount); // Reapply policy on updated amount
+        totalFinesAmount += amount;
     }
 
     static double getTotalFinesAmount() {
         return totalFinesAmount;
     }
 
-    virtual void applyFinePolicy() const = 0;
+    void applyFinePolicy() const {
+        cout << finePolicy->getPolicyDescription() << ": " << amount << endl;
+    }
 };
 
 double Fine::totalFinesAmount = 0;
 
-class StandardFine : public Fine {
-public:
-    StandardFine(double amt, shared_ptr<Violation> viol) : Fine(amt, viol) {}
-
-    void applyFinePolicy() const override {
-        cout << "Applying standard fine policy: " << amount << endl;
-    }
-};
-
-class HeavyFine : public Fine {
-public:
-    HeavyFine(double amt, shared_ptr<Violation> viol) : Fine(amt * 2, viol) {}
-
-    void applyFinePolicy() const override {
-        cout << "Applying heavy fine policy with double the amount: " << amount << endl;
-    }
-};
-
+// Interface for FineFactory to allow dependency injection
 class FineFactory {
 public:
-    static unique_ptr<Fine> createFine(double amount, shared_ptr<Violation> viol, bool heavy = false) {
+    virtual ~FineFactory() = default;
+    virtual unique_ptr<Fine> createFine(double amount, shared_ptr<Violation> violation, bool heavy) = 0;
+};
+
+// Concrete implementation of FineFactory using the Standard and Heavy policies
+class ConcreteFineFactory : public FineFactory {
+public:
+    unique_ptr<Fine> createFine(double amount, shared_ptr<Violation> violation, bool heavy) override {
+        shared_ptr<FinePolicy> policy;
         if (heavy) {
-            return make_unique<HeavyFine>(amount, viol);
+            policy = make_shared<HeavyFinePolicy>();
         } else {
-            return make_unique<StandardFine>(amount, viol);
+            policy = make_shared<StandardFinePolicy>();
         }
+        return make_unique<Fine>(amount, violation, policy);
     }
 };
 
+// FineManager handles multiple fines and their aggregation
 class FineManager {
 private:
     vector<unique_ptr<Fine>> fines;
@@ -112,6 +143,7 @@ public:
     }
 };
 
+// Entity class for named entities
 class Entity {
 protected:
     string name;
@@ -125,6 +157,7 @@ public:
     }
 };
 
+// Person class that has a FineManager to manage fines
 class Person : public Entity {
 private:
     string license_number;
@@ -143,6 +176,7 @@ public:
     }
 };
 
+// Manages violations and provides an interface to add new ones
 class ViolationManager {
 private:
     vector<shared_ptr<Violation>> violations;
@@ -155,19 +189,21 @@ public:
     }
 };
 
+// Vehicle class manages violations and assigns fines through an injected FineFactory
 class Vehicle {
 private:
     string registration_number;
     Person* owner;
     ViolationManager violationManager;
+    FineFactory& fineFactory;
 
 public:
-    Vehicle(const string& reg_num, Person* own)
-        : registration_number(reg_num), owner(own) {}
+    Vehicle(const string& reg_num, Person* own, FineFactory& factory)
+        : registration_number(reg_num), owner(own), fineFactory(factory) {}
 
     void addViolationWithFine(const string& violationDescription, double fineAmount, bool heavy = false) {
         auto violation = violationManager.addViolation(violationDescription);
-        auto fine = FineFactory::createFine(fineAmount, violation, heavy);
+        auto fine = fineFactory.createFine(fineAmount, violation, heavy);
         owner->getFineManager().addFine(move(fine));
     }
 };
@@ -181,6 +217,7 @@ int main() {
     cin.ignore();
 
     vector<unique_ptr<Person>> people;
+    ConcreteFineFactory fineFactory;
 
     for (int i = 0; i < numPeople; ++i) {
         cout << "Enter name of person " << (i + 1) << ": ";
@@ -204,7 +241,7 @@ int main() {
             cout << "Enter registration number of vehicle " << (j + 1) << ": ";
             getline(cin, registrationNumber);
 
-            Vehicle vehicle(registrationNumber, person.get());
+            Vehicle vehicle(registrationNumber, person.get(), fineFactory);
 
             int numViolations;
             cout << "Enter number of violations for vehicle " << (j + 1) << ": ";

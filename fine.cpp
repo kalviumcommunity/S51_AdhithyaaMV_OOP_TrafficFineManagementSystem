@@ -10,6 +10,7 @@ private:
     static int totalViolations;  
 
 public:
+    
     Violation(const string& desc) : description(desc) {
         totalViolations++;
     }
@@ -22,21 +23,29 @@ public:
         description = desc;
     }
 
+    
     static int getTotalViolations() {
         return totalViolations;
     }
 };
 
+
 int Violation::totalViolations = 0;
+
+
 
 class Fine {
 protected:
-    double amount;               
-    Violation* violation;        
+    double amount;              
+    Violation* violation;       
     static double totalFinesAmount; 
 
 public:
     Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
+        totalFinesAmount += amt;
+    }
+
+    Fine(double amt) : amount(amt), violation(nullptr) {
         totalFinesAmount += amt;
     }
 
@@ -59,14 +68,16 @@ public:
 
 double Fine::totalFinesAmount = 0;
 
+
 class HeavyFine : public Fine {
 public:
-    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {}
+    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {} 
 };
+
 
 class Entity {
 protected:
-    string name;
+    string name;  
 
 public:
     Entity(const string& name) : name(name) {}
@@ -81,10 +92,11 @@ public:
     }
 };
 
+
 class Person : public Entity {
 private:
-    string license_number;
-    vector<Fine*> fines;  
+    string license_number;      
+    vector<Fine*> fines;        
 
 public:
     Person(const string& name, const string& license)
@@ -117,10 +129,11 @@ public:
     }
 };
 
+
 class Vehicle {
 private:
-    string registration_number;
-    Person* owner;
+    string registration_number;   
+    Person* owner;                
     vector<Violation*> violations;
 
 public:
@@ -129,7 +142,7 @@ public:
 
     ~Vehicle() {
         for (Violation* violation : violations) {
-            delete violation;
+            delete violation;  
         }
     }
 
@@ -144,12 +157,13 @@ public:
     void addViolation(Violation* violation, double fine_amount, bool heavy = false) {
         violations.push_back(violation);
         if (heavy) {
-            owner->addFine(new HeavyFine(fine_amount, violation));
+            owner->addFine(new HeavyFine(fine_amount, violation)); 
         } else {
-            owner->addFine(new Fine(fine_amount, violation));
+            owner->addFine(new Fine(fine_amount, violation));  
         }
     }
 };
+
 
 int main() {
     int numPeople, numVehicles, numViolations;

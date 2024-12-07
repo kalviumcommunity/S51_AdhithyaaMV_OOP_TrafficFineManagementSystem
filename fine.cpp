@@ -32,8 +32,6 @@ public:
 
 int Violation::totalViolations = 0;
 
-
-
 class Fine {
 protected:
     double amount;              
@@ -41,6 +39,7 @@ protected:
     static double totalFinesAmount; 
 
 public:
+    
     Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
         totalFinesAmount += amt;
     }
@@ -51,7 +50,8 @@ public:
 
     virtual ~Fine() = default;
 
-    double getAmount() const {
+
+    virtual double getAmount() const {
         return amount;
     }
 
@@ -66,14 +66,19 @@ public:
     }
 };
 
+
 double Fine::totalFinesAmount = 0;
 
 
 class HeavyFine : public Fine {
 public:
-    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {} 
-};
+    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {}
 
+    
+    double getAmount() const override {
+        return amount;
+    }
+};
 
 class Entity {
 protected:
@@ -91,7 +96,6 @@ public:
         name = n;
     }
 };
-
 
 class Person : public Entity {
 private:
@@ -129,7 +133,6 @@ public:
     }
 };
 
-
 class Vehicle {
 private:
     string registration_number;   
@@ -163,7 +166,6 @@ public:
         }
     }
 };
-
 
 int main() {
     int numPeople, numVehicles, numViolations;

@@ -58,7 +58,8 @@ public:
 
 int Violation::totalViolations = 0;
 
-// Abstract Fine class, depending on FinePolicy abstraction
+
+
 class Fine {
 protected:
     double amount;
@@ -67,15 +68,26 @@ protected:
     static double totalFinesAmount;
 
 public:
+
+    
+    Fine(double amt, Violation* viol) : amount(amt), violation(viol) {
+        totalFinesAmount += amt;
+    }
+
+    Fine(double amt) : amount(amt), violation(nullptr) {
+        totalFinesAmount += amt;
+=======
     Fine(double amt, shared_ptr<Violation> viol, shared_ptr<FinePolicy> policy)
         : amount(amt), violation(viol), finePolicy(policy) {
         finePolicy->applyPolicy(amount); // Apply the fine policy on amount
         totalFinesAmount += amount;
+
     }
 
     virtual ~Fine() = default;
 
-    double getAmount() const {
+
+    virtual double getAmount() const {
         return amount;
     }
 
@@ -95,6 +107,7 @@ public:
     }
 };
 
+
 double Fine::totalFinesAmount = 0;
 
 // Interface for FineFactory to allow dependency injection
@@ -107,6 +120,15 @@ public:
 // Concrete implementation of FineFactory using the Standard and Heavy policies
 class ConcreteFineFactory : public FineFactory {
 public:
+
+    HeavyFine(double amt, Violation* viol) : Fine(amt * 2, viol) {}
+
+    
+    double getAmount() const override {
+        return amount;
+    }
+};
+=======
     unique_ptr<Fine> createFine(double amount, shared_ptr<Violation> violation, bool heavy) override {
         shared_ptr<FinePolicy> policy;
         if (heavy) {
@@ -136,6 +158,7 @@ public:
         return total;
     }
 
+
     void applyFinePolicies() const {
         for (const auto& fine : fines) {
             fine->applyFinePolicy();
@@ -157,7 +180,8 @@ public:
     }
 };
 
-// Person class that has a FineManager to manage fines
+
+
 class Person : public Entity {
 private:
     string license_number;
@@ -189,7 +213,7 @@ public:
     }
 };
 
-// Vehicle class manages violations and assigns fines through an injected FineFactory
+
 class Vehicle {
 private:
     string registration_number;
